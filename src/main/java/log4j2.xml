@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE XML>
+<Configuration status="DEBUG">
+	<Appenders>
+		<Console name="LogToConsole" target="SYSTEM_OUT">
+			<!-- <PatternLayout charset="UTF-8" pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} 
+				[%t] %-5level %logger{36}:%L - %msg%n" /> -->
+			<!-- <PatternLayout charset="UTF-8" disableAnsi="false" pattern="%highlight{%d{HH:mm:ss.SSS} 
+				%-5level %logger{36}.%M() Line:%L - %msg%n}{FATAL=red bold, ERROR=red, WARN=yellow 
+				bold, INFO=black, DEBUG=green bold, TRACE=blue}"/> -->
+			<!-- <PatternLayout disableAnsi="false" pattern="%d{${LOG_DATEFORMAT_PATTERN:-yyyy-MM-dd 
+				HH:mm:ss.SSS}} %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red blink, ERROR=red, 
+				WARN=yellow bold, INFO=green, DEBUG=green bold, TRACE=blue} %style{}{magenta} 
+				[%M] %style{%4C}{cyan} : %highlight{%m}{FATAL=red blink, ERROR=red, WARN=yellow 
+				bold, INFO=green, DEBUG=green bold, TRACE=blue} %n${LOG_EXCEPTION_CONVERSION_WORD:-%xEx}" 
+				/> -->
+			<!-- Uday -->
+			<PatternLayout charset="UTF-8" disableAnsi="false"
+				pattern="%style{%d{dd MMM yyyy HH:mm:ss}}{cyan} [%style{%M}{yellow}] %highlight{${LOG_LEVEL_PATTERN:-%5p}}{FATAL=red ERROR=red, WARN=yellow INFO=green, DEBUG=green bold, TRACE=blue} %style{%C}{cyan}%style{:}{white, bright}%style{%L}{cyan} %highlight{-}{ERROR=red bright, FATAL=red bright} %highlight{%m}{FATAL=red, ERROR=red, WARN=yellow bold, INFO=green, DEBUG=green bold, TRACE=blue}  %n${LOG_EXCEPTION_CONVERSION_WORD:-%xEx}" />
+		</Console>
+		
+		<RollingFile name="LogToRollingFile"
+			fileName="template.log"
+			filePattern="logs/$${date:yyyy-MM}/template-%d{MM-dd-yyyy}-%i.log.gz"
+			filePermissions="rw-rw-r--">
+			<PatternLayout charset="UTF-8">
+				<Pattern>%d %p %c{1.}:%L [%t] %m%n</Pattern>
+			</PatternLayout>
+			<Policies>
+				<TimeBasedTriggeringPolicy />
+				<SizeBasedTriggeringPolicy size="1024 MB" />
+			</Policies>
+			<DefaultRolloverStrategy max="50" />
+		</RollingFile>
+
+		<Gelf name="gelf" host="udp:staging-graylog.rezo.ai" port="9515"
+			version="1.1" extractStackTrace="true" filterStackTrace="true"
+			mdcProfiling="true" includeFullMdc="true" maximumMessageSize="8192"
+			originHost="%host{fqdn}"
+			additionalFieldTypes="fieldName1=String,fieldName2=Double,fieldName3=Long">
+			<Field name="timestamp" pattern="%d{dd MMM yyyy HH:mm:ss,SSS}" />
+			<Field name="level" pattern="%level" />
+			<Field name="simpleClassName" pattern="%C{1}" />
+			<Field name="className" pattern="%C" />
+			<Field name="server" pattern="%host" />
+			<Field name="server.fqdn" pattern="%host{fqdn}" />
+
+			<!-- This is a static field -->
+			<Field name="fieldName2" literal="fieldValue2" />
+
+			<!-- This is a field using MDC -->
+			<Field name="mdcField2" mdc="mdcField2" />
+			<DynamicMdcFields regex="mdc.*" />
+			<DynamicMdcFields regex="(mdc|MDC)fields" />
+			<DynamicMdcFieldType regex="my_field.*"
+				type="String" />
+		</Gelf>
+		
+	</Appenders>
+
+	<Loggers>
+		<!-- avoid duplicated logs with additivity=false -->
+		<Logger name="ai.rezo" level="debug" additivity="false">
+			<AppenderRef ref="LogToRollingFile" />
+			<AppenderRef ref="LogToConsole" />
+			<AppenderRef ref="gelf" />
+		</Logger>
+		<Root level="debug">
+			<AppenderRef ref="LogToRollingFile" />
+			<AppenderRef ref="LogToConsole" />
+			<AppenderRef ref="gelf" />
+		</Root>
+	</Loggers>
+</Configuration>
